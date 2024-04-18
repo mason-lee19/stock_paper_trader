@@ -1,0 +1,7 @@
+yfinance==0.2.37
+pandas==2.2.1
+sqlalchemy==2.0.29 --no-deps
+ta-lib==0.4.28
+neat-python==0.92
+alpaca-trade-api==3.2.0
+python-dotenv==1.0.1
