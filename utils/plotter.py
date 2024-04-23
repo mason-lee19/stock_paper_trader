@@ -22,7 +22,7 @@ class Plotter:
         plt.xlabel('Index')
         plt.ylabel('Price')
 
-        plt.title(f'Model Signal BackTest, percent made: {self.calc_percent()}')
+        plt.title(f'Model Signal BackTest, percent made: {self.calc_percent()} for {len(self.buy_indices)} trades')
 
         plt.legend()
 
