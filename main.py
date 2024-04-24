@@ -29,7 +29,7 @@ class TradeSimulation:
         cols_to_exclude = ['symbol','timestamp']
         excluded_columns_df = df[cols_to_exclude]
 
-        self.close_prices = df['close']
+        
 
         cols_to_normalize = df.drop(cols_to_exclude,axis=1).columns
         

@@ -41,7 +41,8 @@ class DataHandler:
         request_params = CryptoBarsRequest(
             symbol_or_symbols=[self.reqConfig.stockTicker],
             timeframe=TimeFrame.Day,
-            start=self.reqConfig.startDate
+            start=self.reqConfig.startDate,
+            #end='2024-02-01'
         )
 
         crypto_bars = self.client.get_crypto_bars(request_params=request_params)
