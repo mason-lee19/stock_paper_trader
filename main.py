@@ -3,18 +3,28 @@ import pandas as pd
 import neat
 import pickle
 import os
+from alpaca.rest import REST
 
 from utils import DataHandler, ApplyIndicators, Plotter
 
+# Amount in dollars per trade
+TRADE_AMOUNT = 10,000
+
 class TradeSimulation:
 
-    def __init__(self):
+    def __init__(self,apiConfig,ticker):
         self.df = pd.DataFrame()
         self.close_prices = pd.DataFrame()
 
         self.config = self.get_config()
 
         self.results = []
+
+        self.ticker = ticker
+
+        self.api = REST(key_id=apiConfig.api_key,
+                        secret_key=apiConfig.api_secret,
+                        base_url=apiConfig.base_url)
 
     def prepare_data(self,dataMgr) -> None:
         # Query data
@@ -95,11 +105,40 @@ class TradeSimulation:
 
     def check_signal(self):
         if self.df['signal'].iloc[-1] == 'Buy':
-            # Execute a buy order
-            pass
+            self.place_buy_order()
         elif self.df['signal'].iloc[-1] == 'Sell':
-            # Execute a sell order
-            pass
+            cur_position = self.pull_position
+            if cur_position:
+                self.place_sell_order(cur_position.qty)
+
+    def place_buy_order(self) -> None:
+        order = self.api.submit_order(
+            symbol=self.ticker,
+            qty=self.calculate_buy_quantity(),
+            side='buy',
+            type='market'
+        )
+
+    def place_sell_order(self,quantity) -> None:
+        order = self.api.submit_order(
+            symbol=self.ticker,
+            qty=quantity,
+            side='sell',
+            type='market'
+        )
+
+    def pull_position(self):
+        try:
+            ticker_position = self.api.get_open_position(self.ticker)
+            return ticker_position
+        except:
+            print(f'No position found for symbol: {self.ticker}')
+            return None
+
+    def calculate_buy_quantity(self):
+        cur_price = self.df['open'].iloc[-1]
+        return round(TRADE_AMOUNT / cur_price,1)
+        
 
 
 def main(args):
@@ -107,7 +146,7 @@ def main(args):
     dataMgr = DataHandler(requestConfig=args)
 
     # Pull and prepare data to be analyzed by model
-    simu = TradeSimulation()
+    simu = TradeSimulation(dataMgr,args.stockTicker)
     simu.prepare_data(dataMgr)
 
     simu.run_model(args.model)

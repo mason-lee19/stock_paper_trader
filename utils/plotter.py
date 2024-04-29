@@ -5,8 +5,6 @@ import pandas as pd
 class Plotter:
     def __init__(self,results,close_prices):
         self.df = close_prices
-        print(self.df.columns)
-        print(self.df.iloc[:10])
 
         self.buy_indices = [idx for action,idx in results if action=='BUY']
         self.buy_prices = [close_prices.iloc[idx] for idx in self.buy_indices]

@@ -58,7 +58,7 @@ class TradeSimulation:
 
         self.trade(winner_net)
 
-    def trade(self,net):
+    def trade(self,net,dataMgr):
         start_index = 30
         buy_signal = False
 
@@ -91,7 +91,7 @@ class TradeSimulation:
             elif decision == 1 and buy_signal:
                 buy_signal = False
                 self.results.append(('SELL',idx))
-
+                
 def main(args):
     # Get api key and secret
     dataMgr = DataHandler(requestConfig=args)
