@@ -3,7 +3,9 @@ import pandas as pd
 import neat
 import pickle
 import os
-from alpaca.rest import REST
+from alpaca.trading.client import TradingClient
+from alpaca.trading.requests import MarketOrderRequest
+from alpaca.trading.enums import OrderSide, TimeInForce
 
 from utils import DataHandler, ApplyIndicators, Plotter
 
@@ -22,9 +24,9 @@ class TradeSimulation:
 
         self.ticker = ticker
 
-        self.api = REST(key_id=apiConfig.api_key,
-                        secret_key=apiConfig.api_secret,
-                        base_url=apiConfig.base_url)
+        self.trading_client = TradingClient(apiConfig.api_key,
+                                            apiConfig.api_secret,
+                                            paper=True)
 
     def prepare_data(self,dataMgr) -> None:
         # Query data
@@ -107,29 +109,37 @@ class TradeSimulation:
         if self.df['signal'].iloc[-1] == 'Buy':
             self.place_buy_order()
         elif self.df['signal'].iloc[-1] == 'Sell':
-            cur_position = self.pull_position
+            cur_position = self.pull_position()
             if cur_position:
                 self.place_sell_order(cur_position.qty)
 
     def place_buy_order(self) -> None:
-        order = self.api.submit_order(
-            symbol=self.ticker,
-            qty=self.calculate_buy_quantity(),
-            side='buy',
-            type='market'
+        market_order_data = MarketOrderRequest(
+                            symbol=self.ticker,
+                            qty=self.calculate_buy_quantity(),
+                            side=OrderSide.BUY,
+                            time_in_force=TimeInForce.GTC
+        )
+        
+        market_order = self.trading_client.submit_order(
+                       order_data=market_order_data
         )
 
     def place_sell_order(self,quantity) -> None:
-        order = self.api.submit_order(
-            symbol=self.ticker,
-            qty=quantity,
-            side='sell',
-            type='market'
+        market_order_data = MarketOrderRequest(
+                            symbol=self.ticker,
+                            qty=quantity,
+                            side=OrderSide.SELL,
+                            time_in_force=TimeInForce.GTC
+        )
+        
+        market_order = self.trading_client.submit_order(
+                       order_data=market_order_data
         )
 
     def pull_position(self):
         try:
-            ticker_position = self.api.get_open_position(self.ticker)
+            ticker_position = self.trading_client.get_open_position(self.ticker)
             return ticker_position
         except:
             print(f'No position found for symbol: {self.ticker}')
