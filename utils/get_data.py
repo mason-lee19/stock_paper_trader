@@ -23,19 +23,20 @@ class DataHandler:
 
     def configure_api(self) -> ApiConfig:
         local_dir = os.path.dirname(os.path.abspath('__file__'))
-        parent_dir = os.path.dirname(local_dir)
-        config_file_path = os.path.join(parent_dir,'API.env')
+        config_file_path = os.path.join(local_dir,'API.env')
         load_dotenv(Path(config_file_path))
 
         config = ApiConfig(api_key=os.getenv("API_KEY"),
                            api_secret=os.getenv("API_SECRET"),
                            base_url=os.getenv("BASE_URL"))
 
+        print(config.api_key)
+        print(config.api_secret)
+
         return config
 
     def configure_crypto_client(self) -> None:
-        self.client = CryptoHistoricalDataClient(api_key=self.apiConfig.api_key,
-                                                 secret_key=self.apiConfig.api_secret)
+        self.client = CryptoHistoricalDataClient()
 
     def query_crypto_data(self) -> pd.DataFrame:
         request_params = CryptoBarsRequest(

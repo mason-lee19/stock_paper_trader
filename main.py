@@ -7,14 +7,14 @@ from alpaca.trading.client import TradingClient
 from alpaca.trading.requests import MarketOrderRequest
 from alpaca.trading.enums import OrderSide, TimeInForce
 
-from utils import DataHandler, ApplyIndicators, Plotter
+from utils import DataHandler, ApplyIndicators, DataBaseHandler, DataBaseConfig
 
 # Amount in dollars per trade
-TRADE_AMOUNT = 10,000
+TRADE_AMOUNT = 10000
 
 class TradeSimulation:
 
-    def __init__(self,apiConfig,ticker):
+    def __init__(self,apiMgr,ticker):
         self.df = pd.DataFrame()
         self.close_prices = pd.DataFrame()
 
@@ -24,8 +24,8 @@ class TradeSimulation:
 
         self.ticker = ticker
 
-        self.trading_client = TradingClient(apiConfig.api_key,
-                                            apiConfig.api_secret,
+        self.trading_client = TradingClient(apiMgr.apiConfig.api_key,
+                                            apiMgr.apiConfig.api_secret,
                                             paper=True)
 
     def prepare_data(self,dataMgr) -> None:
@@ -37,11 +37,12 @@ class TradeSimulation:
         indMgr = ApplyIndicators()
         df = indMgr.apply_ta(df)
 
+        # Save original data for results appending
+        self.original_df = df
+
         # Normalize 
         cols_to_exclude = ['symbol','timestamp']
         excluded_columns_df = df[cols_to_exclude]
-
-        
 
         cols_to_normalize = df.drop(cols_to_exclude,axis=1).columns
         
@@ -52,6 +53,23 @@ class TradeSimulation:
         df_normalize.dropna(inplace=True)
 
         self.df = df_normalize
+
+    def prepare_db(self):
+        db_config = DataBaseConfig(
+            table_name='results',
+            url='sqlite:///temp_db_file.db',
+            bucket_name='trade-result-bucket',
+            blob_name='trade-results.db'
+        )
+
+        self.db_handler = DataBaseHandler(db_config)
+
+    def upload_results(self,trade_results:pd.DataFrame()):
+
+        self.db_handler.push_to_db(trade_results)
+
+        self.db_handler.upload_blob()
+        
 
     def get_config(self):
         local_dir = os.path.dirname(__file__)
@@ -106,12 +124,25 @@ class TradeSimulation:
                 self.df.at[idx,'signal'] = None
 
     def check_signal(self):
+        new_signal = False
+        
         if self.df['signal'].iloc[-1] == 'Buy':
             self.place_buy_order()
+            new_signal = True
         elif self.df['signal'].iloc[-1] == 'Sell':
             cur_position = self.pull_position()
             if cur_position:
                 self.place_sell_order(cur_position.qty)
+                new_signal = True
+
+        if new_signal:
+            results = {'stock':[self.ticker],
+                       'action':[self.df['signal'].iloc[-1]],
+                       'price':[self.original_df['open'].iloc[-1]],
+                       'date':[self.original_df['timestamp'].iloc[-1]]
+            }
+            self.prepare_db()
+            self.upload_results(pd.DataFrame(results))
 
     def place_buy_order(self) -> None:
         market_order_data = MarketOrderRequest(
@@ -139,25 +170,26 @@ class TradeSimulation:
 
     def pull_position(self):
         try:
-            ticker_position = self.trading_client.get_open_position(self.ticker)
+            if self.ticker == 'BTC/USD':
+                ticker_position = self.trading_client.get_open_position('BTCUSD')
             return ticker_position
         except:
             print(f'No position found for symbol: {self.ticker}')
             return None
 
     def calculate_buy_quantity(self):
-        cur_price = self.df['open'].iloc[-1]
-        return round(TRADE_AMOUNT / cur_price,1)
+        cur_price = self.original_df['open'].iloc[-1]
+        return round(TRADE_AMOUNT / int(cur_price),1)
         
 
 
 def main(args):
     # Get api key and secret
-    dataMgr = DataHandler(requestConfig=args)
+    apiMgr = DataHandler(requestConfig=args)
 
     # Pull and prepare data to be analyzed by model
-    simu = TradeSimulation(dataMgr,args.stockTicker)
-    simu.prepare_data(dataMgr)
+    simu = TradeSimulation(apiMgr,args.stockTicker)
+    simu.prepare_data(apiMgr)
 
     simu.run_model(args.model)
 

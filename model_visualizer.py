@@ -58,7 +58,7 @@ class TradeSimulation:
 
         self.trade(winner_net)
 
-    def trade(self,net,dataMgr):
+    def trade(self,net):
         start_index = 30
         buy_signal = False
 

@@ -7,3 +7,4 @@ aplpaca-py==0.20.3
 python-dotenv==1.0.1
 matplotlib==3.8.4
 neat-python==0.92
+google-cloud-storage==2.16.0
