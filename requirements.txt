@@ -1,9 +1,9 @@
 yfinance==0.2.37
 pandas==2.2.1
-sqlalchemy==2.0.29 --no-deps
-ta-lib==0.4.28
+sqlalchemy==2.0.29
+pandas-ta==0.3.14b0
 neat-python==0.92
-aplpaca-py==0.20.3
+alpaca-py==0.20.3
 python-dotenv==1.0.1
 matplotlib==3.8.4
 neat-python==0.92

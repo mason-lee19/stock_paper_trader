@@ -94,7 +94,7 @@ class TradeSimulation:
                 
 def main(args):
     # Get api key and secret
-    dataMgr = DataHandler(requestConfig=args)
+    dataMgr = DataHandler(args.stockTicker,args.startDate)
 
     # Pull and prepare data to be analyzed by model
     simu = TradeSimulation()

@@ -16,10 +16,11 @@ class ApiConfig:
     base_url: str
     
 class DataHandler:
-    def __init__(self,requestConfig):
+    def __init__(self,ticker,startDate):
         self.apiConfig = self.configure_api()
         self.configure_crypto_client()
-        self.reqConfig = requestConfig
+        self.stockTicker = ticker
+        self.startDate = startDate
 
     def configure_api(self) -> ApiConfig:
         local_dir = os.path.dirname(os.path.abspath('__file__'))
@@ -30,9 +31,6 @@ class DataHandler:
                            api_secret=os.getenv("API_SECRET"),
                            base_url=os.getenv("BASE_URL"))
 
-        print(config.api_key)
-        print(config.api_secret)
-
         return config
 
     def configure_crypto_client(self) -> None:
@@ -40,9 +38,9 @@ class DataHandler:
 
     def query_crypto_data(self) -> pd.DataFrame:
         request_params = CryptoBarsRequest(
-            symbol_or_symbols=[self.reqConfig.stockTicker],
+            symbol_or_symbols=[self.stockTicker],
             timeframe=TimeFrame.Day,
-            start=self.reqConfig.startDate,
+            start=self.startDate,
             #end='2024-02-01'
         )
 

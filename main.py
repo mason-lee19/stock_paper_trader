@@ -1,4 +1,3 @@
-import argparse
 import pandas as pd
 import neat
 import pickle
@@ -134,6 +133,8 @@ class TradeSimulation:
             if cur_position:
                 self.place_sell_order(cur_position.qty)
                 new_signal = True
+        else:
+            print('No signal detected for today...')
 
         if new_signal:
             results = {'stock':[self.ticker],
@@ -182,27 +183,24 @@ class TradeSimulation:
         return round(TRADE_AMOUNT / int(cur_price),1)
         
 
-
-def main(args):
+def main():
+    """
+    Triggered from a messsage from Pub/Sub topic.
+    """
+    ticker = 'BTC/USD'
+    startDate = '2023-01-01'
+    model = "Models/ModelE.pickle"
     # Get api key and secret
-    apiMgr = DataHandler(requestConfig=args)
+    apiMgr = DataHandler(ticker,startDate)
 
     # Pull and prepare data to be analyzed by model
-    simu = TradeSimulation(apiMgr,args.stockTicker)
+    simu = TradeSimulation(apiMgr,ticker)
     simu.prepare_data(apiMgr)
 
-    simu.run_model(args.model)
+    simu.run_model(model)
 
     simu.check_signal()
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("-s","--stockTicker",type=str,default=None,help="stock ticker")
-    parser.add_argument("-d","--startDate",type=str,default="2020-01-01",help="start date")
-    parser.add_argument("-m","--model",type=str,default="Models/ModelA.pickle",help="Models/ModelA.pickle")
-
-    args = parser.parse_args()
-
-    main(args)
+    main()
