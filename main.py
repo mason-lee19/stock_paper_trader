@@ -183,7 +183,7 @@ class TradeSimulation:
         return round(TRADE_AMOUNT / int(cur_price),1)
         
 
-def main():
+def main(data,context):
     """
     Triggered from a messsage from Pub/Sub topic.
     """
